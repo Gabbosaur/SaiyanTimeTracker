@@ -144,8 +144,9 @@ function checkAchievements() {
         setTimeout(() => showToast(msg, 'success'), 500);
     }
 
-    if (ferieUsed >= FERIE_TOTAL) achieve('all-ferie', '🏆 Ultra Instinct del riposo raggiunto!');
-    if (ferieUsed >= FERIE_TOTAL / 2 && ferieUsed < FERIE_TOTAL) achieve('half-ferie', '⚡ Metà ferie usate — Sei a Super Saiyan 2!');
+    const ferieTotal = getEffectiveFerieTotal(currentYear);
+    if (ferieUsed >= ferieTotal) achieve('all-ferie', '🏆 Ultra Instinct del riposo raggiunto!');
+    if (ferieUsed >= ferieTotal / 2 && ferieUsed < ferieTotal) achieve('half-ferie', '⚡ Metà ferie usate — Sei a Super Saiyan 2!');
     if (permessiUsed > 0 && ferieUsed === 0) achieve('only-permessi', '🧠 Stratega: solo permessi, zero ferie');
     if (total >= 200) achieve('over-200', '🔥 Oltre 200 ore fuori — Power Level: Leggendario');
     if (total === 0 && entries.length === 0) return; // no entries yet

@@ -38,10 +38,12 @@
                 <div class="stat-detail" id="permessiDetail">112h rimanenti</div>
                 <div class="stat-detail" id="permessiCarryover" style="color: #E040FB;"></div>
             </div>
+            <div id="budgetExplanation" class="budget-explanation" style="display:none;"></div>
         </div>
 
         <div class="actions">
             <button class="btn primary" onclick="openModal()">＋ Aggiungi</button>
+            <button class="btn" onclick="openBudgetModal()" title="Impostazioni budget ore">⚙️ Budget</button>
             <button class="btn export-btn" onclick="exportCSV()">📥 Esporta CSV</button>
             <label class="btn">
                 📂 Importa
@@ -164,10 +166,74 @@
     <div class="toast" id="toast"></div>
     <div id="dragInfo" class="drag-info"></div>
 
+    <!-- Budget Settings Modal -->
+    <div class="modal-overlay" id="budgetModalOverlay" onclick="if(event.target===this)closeBudgetModal()">
+        <div class="modal" style="max-width:480px;">
+            <button class="modal-close" onclick="closeBudgetModal()">✕</button>
+            <h3>⚙️ Impostazioni Budget</h3>
+            <p style="font-size:0.82rem; color:var(--saiyan-muted); margin-bottom:18px; line-height:1.5;">
+                Scegli come calcolare le ore disponibili. Utile se sei entrato in corso d'anno.
+            </p>
+
+            <div class="budget-mode-group">
+                <label class="budget-mode-option">
+                    <input type="radio" name="budgetMode" value="default" id="budgetModeDefault" onchange="updateBudgetModalUI()">
+                    <div class="budget-mode-label">
+                        <strong>📋 Standard</strong>
+                        <span>Budget pieno: 160h ferie + 112h permessi</span>
+                    </div>
+                </label>
+                <label class="budget-mode-option">
+                    <input type="radio" name="budgetMode" value="auto" id="budgetModeAuto" onchange="updateBudgetModalUI()">
+                    <div class="budget-mode-label">
+                        <strong>📅 Automatico (pro-rata)</strong>
+                        <span>Calcola in base alla data di assunzione</span>
+                    </div>
+                </label>
+                <label class="budget-mode-option">
+                    <input type="radio" name="budgetMode" value="manual" id="budgetModeManual" onchange="updateBudgetModalUI()">
+                    <div class="budget-mode-label">
+                        <strong>✏️ Manuale</strong>
+                        <span>Inserisci tu le ore totali</span>
+                    </div>
+                </label>
+            </div>
+
+            <div id="budgetAutoSection" style="display:none; margin-top:16px;">
+                <div class="form-group">
+                    <label>Data di assunzione</label>
+                    <input type="date" id="budgetHireDate" onchange="updateBudgetPreviewCalc()">
+                </div>
+            </div>
+
+            <div id="budgetManualSection" style="display:none; margin-top:16px;">
+                <div class="form-group">
+                    <label>Ore ferie totali annue</label>
+                    <input type="number" id="budgetFerieManual" min="0" max="500" value="160" oninput="updateBudgetPreviewCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Ore permessi totali annue</label>
+                    <input type="number" id="budgetPermessiManual" min="0" max="500" value="112" oninput="updateBudgetPreviewCalc()">
+                </div>
+            </div>
+
+            <div id="budgetPreviewSection" class="budget-preview-box" style="margin-top:16px;"></div>
+
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="btn" onclick="closeBudgetModal()">Annulla</button>
+                <button class="btn primary" onclick="saveBudgetModal()">Salva</button>
+            </div>
+            <div style="margin-top:12px; text-align:center;">
+                <button onclick="resetBudget()" style="background:none; border:none; color:var(--saiyan-muted); font-size:0.75rem; cursor:pointer; text-decoration:underline;">Ripristina budget standard</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Modules (ordine di caricamento importante) -->
     <script src="js/utils.js"></script>
     <script src="js/profile.js"></script>
     <script src="js/holidays.js"></script>
+    <script src="js/budget.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/stats.js"></script>
     <script src="js/calendar.js"></script>

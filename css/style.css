@@ -442,3 +442,105 @@ body.super-saiyan .month-card { border-color: rgba(255, 215, 0, 0.1); }
     line-height: 1.5;
     animation: fadeSlideUp 0.5s ease 0.3s both;
 }
+
+/* ===== BUDGET SETTINGS ===== */
+
+.budget-explanation {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--saiyan-gold);
+    background: rgba(255, 215, 0, 0.06);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-top: 4px;
+}
+
+.budget-mode-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.budget-mode-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--saiyan-darker);
+    border: 1px solid var(--saiyan-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.budget-mode-option:hover {
+    border-color: var(--saiyan-orange);
+}
+
+.budget-mode-option:has(input:checked) {
+    border-color: var(--saiyan-gold);
+    background: rgba(255, 215, 0, 0.05);
+}
+
+.budget-mode-option input[type="radio"] {
+    margin-top: 3px;
+    accent-color: var(--saiyan-gold);
+}
+
+.budget-mode-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.budget-mode-label strong {
+    font-size: 0.9rem;
+    color: var(--saiyan-text);
+}
+
+.budget-mode-label span {
+    font-size: 0.75rem;
+    color: var(--saiyan-muted);
+}
+
+.budget-preview-box {
+    background: var(--saiyan-darker);
+    border: 1px solid var(--saiyan-border);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.budget-preview-title {
+    font-family: 'Bangers', cursive;
+    color: var(--saiyan-gold);
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.budget-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+}
+
+.budget-preview-row span:first-child {
+    min-width: 100px;
+}
+
+.budget-calc-detail {
+    font-size: 0.72rem;
+    color: var(--saiyan-muted);
+    margin-left: auto;
+}
+
+.budget-preview-note {
+    font-size: 0.78rem;
+    color: var(--saiyan-muted);
+    line-height: 1.5;
+    padding: 4px 0;
+}

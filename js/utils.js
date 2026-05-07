@@ -1,5 +1,10 @@
 // ===== UTILITY FUNCTIONS =====
 
+const FERIE_TOTAL = 160;
+const PERMESSI_TOTAL = 112;
+const MONTHS_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const DAYS_IT = ['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+
 function formatDate(y, m, d) {
     return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }

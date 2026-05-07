@@ -27,11 +27,12 @@ function getAllData() {
         if (data) { try { allYears[y] = JSON.parse(data); } catch {} }
     }
     return {
-        version: '1.0',
+        version: '1.1',
         app: 'saiyan-time-tracker',
         lastSaved: new Date().toISOString(),
         ferieTotal: FERIE_TOTAL,
         permessiTotal: PERMESSI_TOTAL,
+        budgetSettings: getBudgetSettings(),
         years: allYears,
         customHolidays: getCustomHolidays(),
         userName: getUserName()
@@ -92,6 +93,7 @@ async function tryAutoRestore() {
                     localStorage.setItem(storageKey(year), JSON.stringify(yearEntries));
                 });
                 if (data.customHolidays) localStorage.setItem('saiyan_custom_holidays', JSON.stringify(data.customHolidays));
+                if (data.budgetSettings) localStorage.setItem('saiyan_budget_settings', JSON.stringify(data.budgetSettings));
                 if (data.userName) setUserName(data.userName);
                 fileHandle = handle;
                 loadEntries();
@@ -112,7 +114,7 @@ function getPermessiCarryover(year) {
     const prevEntries = loadEntriesForYear(year - 1);
     const prevUsed = prevEntries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const prevCarryover = getPermessiCarryover(year - 1);
-    return (PERMESSI_TOTAL + prevCarryover) - prevUsed;
+    return (getEffectivePermessiTotal(year - 1) + prevCarryover) - prevUsed;
 }
 
 function getFirstTrackedYear() {

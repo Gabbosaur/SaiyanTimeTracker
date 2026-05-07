@@ -101,8 +101,8 @@ function updateBudgetPreview() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const ferieRemaining = FERIE_TOTAL - ferieUsed;
-    const permessiRemaining = (PERMESSI_TOTAL + carryover) - permessiUsed;
+    const ferieRemaining = getEffectiveFerieTotal(currentYear) - ferieUsed;
+    const permessiRemaining = (getEffectivePermessiTotal(currentYear) + carryover) - permessiUsed;
     document.getElementById('budgetFerie').textContent = `${ferieRemaining}h`;
     document.getElementById('budgetPermessi').textContent = `${permessiRemaining}h`;
 

@@ -13,9 +13,10 @@ function exportCSV() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const permessiTotal = PERMESSI_TOTAL + carryover;
+    const ferieTotal = getEffectiveFerieTotal(currentYear);
+    const permessiTotal = getEffectivePermessiTotal(currentYear) + carryover;
     csv += `\nRiepilogo ${currentYear}\n`;
-    csv += `Ferie usate,${ferieUsed}h su ${FERIE_TOTAL}h,Rimanenti: ${FERIE_TOTAL - ferieUsed}h,Scadono il 31/12/${currentYear}\n`;
+    csv += `Ferie usate,${ferieUsed}h su ${ferieTotal}h,Rimanenti: ${ferieTotal - ferieUsed}h,Scadono il 31/12/${currentYear}\n`;
     csv += `Permessi usati,${permessiUsed}h su ${permessiTotal}h,Rimanenti: ${permessiTotal - permessiUsed}h\n`;
     if (carryover > 0) csv += `Riporto da ${currentYear - 1},${carryover}h\n`;
 
@@ -47,6 +48,7 @@ function importJSON(text) {
                 localStorage.setItem(storageKey(year), JSON.stringify(yearEntries));
             });
             if (data.customHolidays) localStorage.setItem('saiyan_custom_holidays', JSON.stringify(data.customHolidays));
+            if (data.budgetSettings) localStorage.setItem('saiyan_budget_settings', JSON.stringify(data.budgetSettings));
             if (data.userName) { setUserName(data.userName); updateGreeting(); }
             loadEntries(); render();
             showToast('Dati ripristinati da backup!', 'success');

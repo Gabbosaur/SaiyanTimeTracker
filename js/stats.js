@@ -4,10 +4,11 @@ function updateStats() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
 
-    // Ferie
-    const ferieRemaining = FERIE_TOTAL - ferieUsed;
-    document.getElementById('ferieUsed').textContent = `${ferieUsed} / ${FERIE_TOTAL}h (${hToDays(FERIE_TOTAL)})`;
-    document.getElementById('ferieBar').style.width = Math.min((ferieUsed / FERIE_TOTAL) * 100, 100) + '%';
+    // Ferie (usa budget effettivo)
+    const ferieTotal = getEffectiveFerieTotal(currentYear);
+    const ferieRemaining = ferieTotal - ferieUsed;
+    document.getElementById('ferieUsed').textContent = `${ferieUsed} / ${ferieTotal}h (${hToDays(ferieTotal)})`;
+    document.getElementById('ferieBar').style.width = Math.min((ferieUsed / ferieTotal) * 100, 100) + '%';
     document.getElementById('ferieDetail').textContent = `${ferieRemaining}h rimanenti (${hToDays(ferieRemaining)})`;
 
     const ferieWarningEl = document.getElementById('ferieWarning');
@@ -19,9 +20,10 @@ function updateStats() {
         ferieWarningEl.textContent = '';
     }
 
-    // Permessi
+    // Permessi (usa budget effettivo)
+    const permessiBase = getEffectivePermessiTotal(currentYear);
     const carryover = getPermessiCarryover(currentYear);
-    const permessiTotal = PERMESSI_TOTAL + carryover;
+    const permessiTotal = permessiBase + carryover;
     const permessiRemaining = permessiTotal - permessiUsed;
 
     document.getElementById('permessiUsed').textContent = `${permessiUsed} / ${permessiTotal}h (${hToDays(permessiTotal)})`;
@@ -37,6 +39,14 @@ function updateStats() {
         carryoverEl.textContent = `⚠ ${carryover}h debito da ${currentYear - 1}`;
     } else {
         carryoverEl.textContent = '';
+    }
+
+    // Mostra spiegazione budget se pro-rata o manuale
+    const budgetExpl = getBudgetExplanation(currentYear);
+    const budgetExplEl = document.getElementById('budgetExplanation');
+    if (budgetExplEl) {
+        budgetExplEl.textContent = budgetExpl || '';
+        budgetExplEl.style.display = budgetExpl ? 'block' : 'none';
     }
 }
 
@@ -54,8 +64,8 @@ function updateFloatingStats() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const ferieLeft = FERIE_TOTAL - ferieUsed;
-    const permessiLeft = (PERMESSI_TOTAL + carryover) - permessiUsed;
+    const ferieLeft = getEffectiveFerieTotal(currentYear) - ferieUsed;
+    const permessiLeft = (getEffectivePermessiTotal(currentYear) + carryover) - permessiUsed;
     document.getElementById('floatFerie').textContent = `${ferieLeft}h (${hToDays(ferieLeft)})`;
     document.getElementById('floatPermessi').textContent = `${permessiLeft}h (${hToDays(permessiLeft)})`;
 }

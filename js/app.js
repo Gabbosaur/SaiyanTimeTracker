@@ -1,10 +1,5 @@
 // ===== SAIYAN TIME TRACKER — Main App =====
 
-const FERIE_TOTAL = 160;
-const PERMESSI_TOTAL = 112;
-const MONTHS_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-const DAYS_IT = ['Lu','Ma','Me','Gi','Ve','Sa','Do'];
-
 let currentYear = new Date().getFullYear();
 let entries = [];
 let editingId = null;
