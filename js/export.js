@@ -13,11 +13,13 @@ function exportCSV() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const ferieTotal = getEffectiveFerieTotal(currentYear);
+    const ferieCarryover = getFerieCarryover(currentYear);
+    const ferieTotal = getEffectiveFerieTotal(currentYear) + ferieCarryover;
     const permessiTotal = getEffectivePermessiTotal(currentYear) + carryover;
     csv += `\nRiepilogo ${currentYear}\n`;
     csv += `Ferie usate,${ferieUsed}h su ${ferieTotal}h,Rimanenti: ${ferieTotal - ferieUsed}h,Scadono il 31/12/${currentYear}\n`;
     csv += `Permessi usati,${permessiUsed}h su ${permessiTotal}h,Rimanenti: ${permessiTotal - permessiUsed}h\n`;
+    if (ferieCarryover < 0) csv += `Debito ferie da ${currentYear - 1},${ferieCarryover}h\n`;
     if (carryover > 0) csv += `Riporto da ${currentYear - 1},${carryover}h\n`;
 
     download(`ferie_permessi_${currentYear}.csv`, csv, 'text/csv');

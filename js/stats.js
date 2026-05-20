@@ -4,15 +4,19 @@ function updateStats() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
 
-    // Ferie (usa budget effettivo)
-    const ferieTotal = getEffectiveFerieTotal(currentYear);
+    // Ferie (usa budget effettivo + debito da anno precedente)
+    const ferieBase = getEffectiveFerieTotal(currentYear);
+    const ferieCarryover = getFerieCarryover(currentYear);
+    const ferieTotal = ferieBase + ferieCarryover;
     const ferieRemaining = ferieTotal - ferieUsed;
     document.getElementById('ferieUsed').textContent = `${ferieUsed} / ${ferieTotal}h (${hToDays(ferieTotal)})`;
     document.getElementById('ferieBar').style.width = Math.min((ferieUsed / ferieTotal) * 100, 100) + '%';
     document.getElementById('ferieDetail').textContent = `${ferieRemaining}h rimanenti (${hToDays(ferieRemaining)})`;
 
     const ferieWarningEl = document.getElementById('ferieWarning');
-    if (currentYear === new Date().getFullYear() && ferieRemaining > 0) {
+    if (ferieCarryover < 0) {
+        ferieWarningEl.textContent = `⚠ ${ferieCarryover}h debito da ${currentYear - 1}`;
+    } else if (currentYear === new Date().getFullYear() && ferieRemaining > 0) {
         ferieWarningEl.textContent = `⚠ Da usare entro il 31/12/${currentYear}`;
     } else if (ferieRemaining < 0) {
         ferieWarningEl.textContent = `⚠ Superato il limite di ${Math.abs(ferieRemaining)}h`;
@@ -64,8 +68,26 @@ function updateFloatingStats() {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const ferieLeft = getEffectiveFerieTotal(currentYear) - ferieUsed;
+    const ferieCarryover = getFerieCarryover(currentYear);
+    const ferieLeft = (getEffectiveFerieTotal(currentYear) + ferieCarryover) - ferieUsed;
     const permessiLeft = (getEffectivePermessiTotal(currentYear) + carryover) - permessiUsed;
-    document.getElementById('floatFerie').textContent = `${ferieLeft}h (${hToDays(ferieLeft)})`;
-    document.getElementById('floatPermessi').textContent = `${permessiLeft}h (${hToDays(permessiLeft)})`;
+
+    const floatFerieEl = document.getElementById('floatFerie');
+    const floatPermessiEl = document.getElementById('floatPermessi');
+
+    if (ferieLeft <= 0) {
+        floatFerieEl.textContent = '✓ Tutto allocato';
+        floatFerieEl.classList.add('done');
+    } else {
+        floatFerieEl.textContent = `${ferieLeft}h da allocare`;
+        floatFerieEl.classList.remove('done');
+    }
+
+    if (permessiLeft <= 0) {
+        floatPermessiEl.textContent = '✓ Tutto allocato';
+        floatPermessiEl.classList.add('done');
+    } else {
+        floatPermessiEl.textContent = `${permessiLeft}h da allocare`;
+        floatPermessiEl.classList.remove('done');
+    }
 }

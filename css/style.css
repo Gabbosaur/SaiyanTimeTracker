@@ -78,6 +78,7 @@ body::before {
 .floating-val { font-weight: 700; }
 .floating-val.ferie { color: var(--ferie-color); }
 .floating-val.permessi { color: var(--permessi-color); }
+.floating-val.done { color: #4CAF50; font-size: 0.78rem; }
 
 /* Header */
 .header { text-align: center; padding: 30px 0 20px; }

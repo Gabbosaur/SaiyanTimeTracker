@@ -106,6 +106,20 @@ async function tryAutoRestore() {
     }
 }
 
+// ===== RIPORTO FERIE (solo debito) =====
+
+function getFerieCarryover(year) {
+    const firstTrackedYear = getFirstTrackedYear();
+    if (year <= firstTrackedYear) return 0;
+    const prevEntries = loadEntriesForYear(year - 1);
+    const prevUsed = prevEntries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
+    const prevCarryover = getFerieCarryover(year - 1);
+    const prevTotal = getEffectiveFerieTotal(year - 1) + prevCarryover;
+    const balance = prevTotal - prevUsed;
+    // Solo debito: se il residuo è positivo, scade (non si riporta)
+    return Math.min(balance, 0);
+}
+
 // ===== RIPORTO PERMESSI =====
 
 function getPermessiCarryover(year) {

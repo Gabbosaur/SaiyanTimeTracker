@@ -124,7 +124,8 @@ function showDragInfo(dates) {
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
     const permessiUsed = entries.filter(e => e.type === 'permessi').reduce((s, e) => s + e.hours, 0);
     const carryover = getPermessiCarryover(currentYear);
-    const ferieRemaining = getEffectiveFerieTotal(currentYear) - ferieUsed;
+    const ferieCarryover = getFerieCarryover(currentYear);
+    const ferieRemaining = (getEffectiveFerieTotal(currentYear) + ferieCarryover) - ferieUsed;
     const permessiRemaining = (getEffectivePermessiTotal(currentYear) + carryover) - permessiUsed;
     const cost = count * 8;
     const ferieAfter = ferieRemaining - cost;
