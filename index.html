@@ -90,7 +90,7 @@
                 <label>Data</label>
                 <input type="date" id="entryDate">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="hoursGroup">
                 <label>Ore</label>
                 <select id="entryHours" onchange="if(multiDates.length>0)updateBudgetPreview()">
                     <option value="1">1 ora</option>
@@ -102,6 +102,11 @@
                     <option value="7">7 ore</option>
                     <option value="8" selected>8 ore (giornata intera)</option>
                 </select>
+            </div>
+            <div class="form-group" id="timeRangeGroup" style="display:none;">
+                <label>Fascia oraria <span id="timeRangeLabel" style="color:var(--saiyan-gold); font-weight:700; text-transform:none; letter-spacing:0;"></span></label>
+                <div class="time-strip" id="timeStrip"></div>
+                <div class="time-strip-hint">Trascina per selezionare · Ctrl+trascina per aggiungere un altro intervallo</div>
             </div>
             <div class="form-group">
                 <label>Motivo / Note</label>
@@ -218,6 +223,32 @@
             </div>
 
             <div id="budgetPreviewSection" class="budget-preview-box" style="margin-top:16px;"></div>
+
+            <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--saiyan-border);">
+                <div style="font-size:0.82rem; font-weight:600; color:var(--saiyan-text); margin-bottom:10px;">🕐 Orario lavorativo</div>
+                <div style="display:flex; gap:12px; align-items:end;">
+                    <div style="flex:1;">
+                        <label style="display:block; font-size:0.7rem; color:var(--saiyan-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:1px;">Inizio</label>
+                        <select id="workStartHourSel" style="width:100%; padding:8px; background:var(--saiyan-darker); border:1px solid var(--saiyan-border); border-radius:8px; color:var(--saiyan-text); font-size:0.85rem;">
+                            <option value="7">07:00</option>
+                            <option value="8">08:00</option>
+                            <option value="9">09:00</option>
+                            <option value="10">10:00</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="display:block; font-size:0.7rem; color:var(--saiyan-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:1px;">Ore/giorno</label>
+                        <select id="workDayHoursSel" style="width:100%; padding:8px; background:var(--saiyan-darker); border:1px solid var(--saiyan-border); border-radius:8px; color:var(--saiyan-text); font-size:0.85rem;">
+                            <option value="6">6 ore</option>
+                            <option value="7">7 ore</option>
+                            <option value="8">8 ore</option>
+                            <option value="9" selected>9 ore</option>
+                            <option value="10">10 ore</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="font-size:0.72rem; color:var(--saiyan-muted); margin-top:6px;">Personalizza la fascia oraria usata per i permessi.</div>
+            </div>
 
             <div class="modal-actions" style="margin-top:20px;">
                 <button class="btn" onclick="closeBudgetModal()">Annulla</button>

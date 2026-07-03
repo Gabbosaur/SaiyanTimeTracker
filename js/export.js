@@ -5,9 +5,10 @@ function exportCSV() {
     const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const userName = getUserName();
     let csv = userName ? `Tracker di: ${userName}\n\n` : '';
-    csv += 'Data,Tipo,Ore,Note\n';
+    csv += 'Data,Tipo,Ore,Inizio,Note\n';
     sorted.forEach(e => {
-        csv += `${e.date},${e.type},${e.hours},"${(e.note || '').replace(/"/g, '""')}"\n`;
+        const inizio = (e.type === 'permessi' && e.startHour != null) ? fmtHour(e.startHour) : '';
+        csv += `${e.date},${e.type},${e.hours},${inizio},"${(e.note || '').replace(/"/g, '""')}"\n`;
     });
 
     const ferieUsed = entries.filter(e => e.type === 'ferie').reduce((s, e) => s + e.hours, 0);
@@ -51,6 +52,7 @@ function importJSON(text) {
             });
             if (data.customHolidays) localStorage.setItem('saiyan_custom_holidays', JSON.stringify(data.customHolidays));
             if (data.budgetSettings) localStorage.setItem('saiyan_budget_settings', JSON.stringify(data.budgetSettings));
+            if (data.workSchedule) localStorage.setItem('saiyan_work_schedule', JSON.stringify(data.workSchedule));
             if (data.userName) { setUserName(data.userName); updateGreeting(); }
             loadEntries(); render();
             showToast('Dati ripristinati da backup!', 'success');
@@ -75,24 +77,37 @@ function importCSV(text) {
         }
         const headerIdx = lines.findIndex(l => l.toLowerCase().startsWith('data,tipo,ore'));
         if (headerIdx < 0) { showToast('CSV non riconosciuto. Serve: Data,Tipo,Ore,Note', 'info'); return; }
+        // Rileva se il CSV ha la colonna "Inizio" (nuovo formato)
+        const hasInizio = lines[headerIdx].toLowerCase().includes(',inizio,');
 
         const imported = [];
         for (let i = headerIdx + 1; i < lines.length; i++) {
             const line = lines[i];
             if (line.toLowerCase().startsWith('riepilogo') || line === '') break;
-            const match = line.match(/^(\d{4}-\d{2}-\d{2}),(ferie|permessi),(\d+),(.*)$/i);
-            if (!match) continue;
-            const [, date, type, hours, noteRaw] = match;
-            const note = noteRaw.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+            let date, type, hours, startHour = null, note;
+            if (hasInizio) {
+                const match = line.match(/^(\d{4}-\d{2}-\d{2}),(ferie|permessi),(\d+),(\d{2}:\d{2})?,(.*)$/i);
+                if (!match) continue;
+                date = match[1]; type = match[2]; hours = match[3];
+                if (match[4]) startHour = parseInt(match[4].split(':')[0]);
+                note = match[5];
+            } else {
+                const match = line.match(/^(\d{4}-\d{2}-\d{2}),(ferie|permessi),(\d+),(.*)$/i);
+                if (!match) continue;
+                date = match[1]; type = match[2]; hours = match[3]; note = match[4];
+            }
+            note = note.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
             const year = parseInt(date.split('-')[0]);
             if (year !== currentYear) {
                 currentYear = year;
                 document.getElementById('yearDisplay').textContent = currentYear;
             }
-            imported.push({
+            const entry = {
                 id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
                 type: type.toLowerCase(), date, hours: parseInt(hours), note
-            });
+            };
+            if (entry.type === 'permessi' && startHour != null) entry.startHour = startHour;
+            imported.push(entry);
         }
         if (imported.length === 0) { showToast('Nessun dato trovato nel CSV', 'info'); return; }
 
@@ -100,7 +115,11 @@ function importCSV(text) {
         let added = 0, updated = 0;
         imported.forEach(imp => {
             const existing = entries.find(e => e.date === imp.date && e.type === imp.type);
-            if (existing) { existing.hours = imp.hours; existing.note = imp.note; updated++; }
+            if (existing) {
+                existing.hours = imp.hours; existing.note = imp.note;
+                if (imp.startHour != null) existing.startHour = imp.startHour;
+                updated++;
+            }
             else { entries.push(imp); added++; }
         });
         saveEntries(); render();

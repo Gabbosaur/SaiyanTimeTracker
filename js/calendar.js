@@ -38,16 +38,44 @@ function renderCalendar() {
                 if (hasFerie && hasPermessi) cls += ' both';
                 else if (hasFerie) cls += ' ferie';
                 else if (hasPermessi) {
-                    cls += ' permessi permessi-fill';
-                    const permHours = dayEntries.find(e => e.type === 'permessi').hours;
-                    const fillPct = (permHours / 8) * 100;
-                    inlineStyle = `style="--fill:${fillPct}%"`;
+                    const permEntries = dayEntries.filter(e => e.type === 'permessi');
+                    const dayH = getWorkDayHours();
+                    const wsH = getWorkStartHour();
+                    // Raccogli tutte le barre da tutte le entry permesso del giorno
+                    const allBars = [];
+                    permEntries.forEach(pe => {
+                        if (pe.timeRanges && pe.timeRanges.length > 0) {
+                            pe.timeRanges.forEach(r => {
+                                const startIdx = r.start - wsH;
+                                allBars.push({ top: (startIdx / dayH) * 100, h: (r.dur / dayH) * 100 });
+                            });
+                        } else {
+                            const startIdx = (pe.startHour != null ? pe.startHour : wsH) - wsH;
+                            allBars.push({ top: (startIdx / dayH) * 100, h: (pe.hours / dayH) * 100 });
+                        }
+                    });
+                    if (allBars.length === 1) {
+                        cls += ' permessi permessi-fill';
+                        inlineStyle = `style="--fill:${allBars[0].h}%; --fill-top:${allBars[0].top}%"`;
+                    } else {
+                        cls += ' permessi permessi-multi';
+                        inlineStyle = `data-bars='${JSON.stringify(allBars)}'`;
+                    }
                 }
             }
 
             let tooltip = isHoliday ? `${dateStr} — ${isHoliday}` : dateStr;
             if (!isHoliday && !isWeekend && dayEntries.length > 0) {
-                tooltip = dayEntries.map(e => `${e.type === 'ferie' ? 'Ferie' : 'Permesso'} ${e.hours}h${e.note ? ' — ' + e.note : ''}`).join('\n');
+                tooltip = dayEntries.map(e => {
+                    if (e.type === 'ferie') return `Ferie ${e.hours}h${e.note ? ' — ' + e.note : ''}`;
+                    let range = '';
+                    if (e.timeRanges && e.timeRanges.length > 0) {
+                        range = ' (' + e.timeRanges.map(r => `${fmtHour(r.start)}→${fmtHour(r.start + r.dur)}`).join(', ') + ')';
+                    } else if (e.startHour != null) {
+                        range = ` (${fmtHour(e.startHour)}→${fmtHour(e.startHour + e.hours)})`;
+                    }
+                    return `Permesso ${e.hours}h${range}${e.note ? ' — ' + e.note : ''}`;
+                }).join('\n');
             }
             const selectable = !isWeekend && !isHoliday;
             const dataAttr = selectable ? `data-date="${dateStr}"` : '';
@@ -58,6 +86,20 @@ function renderCalendar() {
         card.innerHTML = html;
         grid.appendChild(card);
     }
+
+    // Render barre multiple per permessi-multi
+    document.querySelectorAll('.day.permessi-multi[data-bars]').forEach(dayEl => {
+        try {
+            const bars = JSON.parse(dayEl.dataset.bars);
+            bars.forEach(bar => {
+                const barDiv = document.createElement('div');
+                barDiv.className = 'permessi-bar-segment';
+                barDiv.style.top = bar.top + '%';
+                barDiv.style.height = bar.h + '%';
+                dayEl.appendChild(barDiv);
+            });
+        } catch {}
+    });
 }
 
 function renderEntries() {
@@ -78,7 +120,7 @@ function renderEntries() {
             <div class="entry-dot ${e.type}"></div>
             <div class="entry-date">${formatDateDisplay(e.date)}</div>
             <div class="entry-type ${e.type}">${e.type === 'ferie' ? '🔥 Ferie' : '⚡ Permessi'}</div>
-            <div class="entry-hours">${e.hours}h</div>
+            <div class="entry-hours">${e.hours}h${e.type === 'permessi' && e.timeRanges && e.timeRanges.length > 0 ? ` <span style="color:var(--saiyan-muted); font-size:0.78rem;">${e.timeRanges.map(r => fmtHour(r.start) + '→' + fmtHour(r.start + r.dur)).join(', ')}</span>` : e.type === 'permessi' && e.startHour != null ? ` <span style="color:var(--saiyan-muted); font-size:0.78rem;">${fmtHour(e.startHour)}→${fmtHour(e.startHour + e.hours)}</span>` : ''}</div>
             <div class="entry-status">${statusLabel}</div>
             <div class="entry-note">${e.note || ''}</div>
             <button class="entry-delete" onclick="editEntry('${e.id}')" title="Modifica">✏️</button>
@@ -151,8 +193,43 @@ function hideDragInfo() {
 
 function onDayClick(dateStr) {
     const dayEntries = entries.filter(e => e.date === dateStr);
-    if (dayEntries.length >= 1) editEntry(dayEntries[0].id);
-    else openModal(dateStr);
+    if (dayEntries.length === 0) {
+        openModal(dateStr);
+    } else if (dayEntries.length === 1) {
+        // Una sola entry: apri con opzione di aggiungere un altro permesso
+        showDayActions(dateStr, dayEntries);
+    } else {
+        // Più entry: mostra lista con opzione di aggiunta
+        showDayActions(dateStr, dayEntries);
+    }
+}
+
+function showDayActions(dateStr, dayEntries) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.style.zIndex = '110';
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.maxWidth = '360px';
+
+    let html = `<button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>`;
+    html += `<h3>📅 ${formatDateDisplay(dateStr)}</h3>`;
+    html += `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:16px;">`;
+    dayEntries.forEach(e => {
+        const icon = e.type === 'ferie' ? '🔥' : '⚡';
+        const typeLabel = e.type === 'ferie' ? 'Ferie' : 'Permesso';
+        const range = (e.type === 'permessi' && e.startHour != null) ? ` (${fmtHour(e.startHour)}→${fmtHour(e.startHour + e.hours)})` : '';
+        html += `<button class="btn" style="justify-content:flex-start; width:100%;" onclick="this.closest('.modal-overlay').remove(); editEntry('${e.id}')">
+            ${icon} ${typeLabel} ${e.hours}h${range}${e.note ? ' — ' + e.note : ''} <span style="margin-left:auto; color:var(--saiyan-muted); font-size:0.75rem;">✏️ Modifica</span>
+        </button>`;
+    });
+    html += `</div>`;
+    html += `<button class="btn primary" style="width:100%;" onclick="this.closest('.modal-overlay').remove(); openModal('${dateStr}')">＋ Aggiungi nuovo</button>`;
+
+    modal.innerHTML = html;
+    overlay.appendChild(modal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
 }
 
 document.addEventListener('mousedown', e => {

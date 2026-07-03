@@ -33,6 +33,7 @@ function getAllData() {
         ferieTotal: FERIE_TOTAL,
         permessiTotal: PERMESSI_TOTAL,
         budgetSettings: getBudgetSettings(),
+        workSchedule: JSON.parse(localStorage.getItem('saiyan_work_schedule') || 'null'),
         years: allYears,
         customHolidays: getCustomHolidays(),
         userName: getUserName()
@@ -94,6 +95,7 @@ async function tryAutoRestore() {
                 });
                 if (data.customHolidays) localStorage.setItem('saiyan_custom_holidays', JSON.stringify(data.customHolidays));
                 if (data.budgetSettings) localStorage.setItem('saiyan_budget_settings', JSON.stringify(data.budgetSettings));
+                if (data.workSchedule) localStorage.setItem('saiyan_work_schedule', JSON.stringify(data.workSchedule));
                 if (data.userName) setUserName(data.userName);
                 fileHandle = handle;
                 loadEntries();

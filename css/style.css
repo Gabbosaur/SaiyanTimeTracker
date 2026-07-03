@@ -217,12 +217,13 @@ body::before {
 }
 .day.permessi-fill::after {
     content: '';
-    position: absolute; bottom: 0; left: 0; right: 0;
+    position: absolute; left: 0; right: 0;
+    top: var(--fill-top, 0%);
     height: var(--fill, 0%);
-    background: linear-gradient(0deg, rgba(30, 144, 255, 0.35), rgba(30, 144, 255, 0.15));
-    border-radius: 0 0 5px 5px;
+    background: linear-gradient(180deg, rgba(30, 144, 255, 0.4), rgba(30, 144, 255, 0.2));
+    border-radius: 3px;
     z-index: -1;
-    transition: height 0.4s ease;
+    transition: height 0.4s ease, top 0.4s ease;
 }
 .day.both { background: linear-gradient(135deg, var(--ferie-bg), var(--permessi-bg)); color: var(--saiyan-gold); font-weight: 700; }
 
@@ -544,4 +545,79 @@ body.super-saiyan .month-card { border-color: rgba(255, 215, 0, 0.1); }
     color: var(--saiyan-muted);
     line-height: 1.5;
     padding: 4px 0;
+}
+
+/* ===== TIME RANGE STRIP ===== */
+
+.time-strip {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 3px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.time-cell {
+    aspect-ratio: 1 / 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--saiyan-darker);
+    border: 1px solid var(--saiyan-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--saiyan-muted);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.time-cell:hover {
+    border-color: var(--permessi-color);
+}
+
+.time-cell.selected {
+    background: var(--permessi-bg);
+    color: var(--permessi-color);
+    border-color: var(--permessi-color);
+    font-weight: 700;
+}
+
+.time-cell.range-start {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    box-shadow: inset 3px 0 0 var(--permessi-color);
+}
+
+.time-cell.range-end {
+    box-shadow: inset -3px 0 0 var(--permessi-color);
+}
+
+.time-cell.range-start.range-end {
+    box-shadow: inset 3px 0 0 var(--permessi-color), inset -3px 0 0 var(--permessi-color);
+}
+
+.time-strip-hint {
+    font-size: 0.72rem;
+    color: var(--saiyan-muted);
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* ===== MULTI-PERMESSI BAR ===== */
+
+.day.permessi-multi {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.permessi-bar-segment {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    background: linear-gradient(180deg, rgba(30, 144, 255, 0.45), rgba(30, 144, 255, 0.2));
+    border-radius: 2px;
+    z-index: -1;
+    transition: height 0.4s ease, top 0.4s ease;
 }

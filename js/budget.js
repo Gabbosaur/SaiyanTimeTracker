@@ -121,6 +121,10 @@ function openBudgetModal() {
         document.getElementById('budgetPermessiManual').value = PERMESSI_TOTAL;
     }
 
+    // Orario lavorativo
+    document.getElementById('workStartHourSel').value = String(getWorkStartHour());
+    document.getElementById('workDayHoursSel').value = String(getWorkDayHours());
+
     updateBudgetModalUI();
     modal.classList.add('active');
 }
@@ -215,6 +219,11 @@ function updateBudgetPreviewCalc() {
 
 function saveBudgetModal() {
     const mode = document.querySelector('input[name="budgetMode"]:checked').value;
+
+    // Salva sempre l'orario lavorativo
+    const workStart = parseInt(document.getElementById('workStartHourSel').value);
+    const workDay = parseInt(document.getElementById('workDayHoursSel').value);
+    saveWorkSchedule(workStart, workDay);
 
     if (mode === 'default') {
         localStorage.removeItem('saiyan_budget_settings');
