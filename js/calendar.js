@@ -195,12 +195,15 @@ function onDayClick(dateStr) {
     const dayEntries = entries.filter(e => e.date === dateStr);
     if (dayEntries.length === 0) {
         openModal(dateStr);
-    } else if (dayEntries.length === 1) {
-        // Una sola entry: apri con opzione di aggiungere un altro permesso
-        showDayActions(dateStr, dayEntries);
     } else {
-        // Più entry: mostra lista con opzione di aggiunta
-        showDayActions(dateStr, dayEntries);
+        // Se c'è una ferie, apri direttamente la modifica (copre tutta la giornata)
+        const ferieEntry = dayEntries.find(e => e.type === 'ferie');
+        if (ferieEntry) {
+            editEntry(ferieEntry.id);
+        } else {
+            // Solo permessi: mostra opzioni per modificare o aggiungerne un altro
+            showDayActions(dateStr, dayEntries);
+        }
     }
 }
 
