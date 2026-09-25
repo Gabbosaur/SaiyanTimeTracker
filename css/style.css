@@ -287,6 +287,20 @@ body::before {
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.success { background: var(--saiyan-orange); color: #000; }
 .toast.info { background: var(--saiyan-blue); color: #fff; }
+.toast { display: flex; align-items: center; gap: 12px; }
+.toast-undo {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: inherit;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.toast-undo:hover { background: rgba(0, 0, 0, 0.4); }
 
 /* Drag info popup */
 .drag-info { position: fixed; bottom: 30px; right: 30px; background: var(--saiyan-card); border: 1px solid var(--saiyan-gold); border-radius: 12px; padding: 14px 18px; font-size: 0.85rem; z-index: 150; box-shadow: 0 0 25px rgba(255, 215, 0, 0.15), 0 8px 30px rgba(0,0,0,0.5); display: none; min-width: 220px; line-height: 1.6; }
@@ -620,4 +634,32 @@ body.super-saiyan .month-card { border-color: rgba(255, 215, 0, 0.1); }
     border-radius: 2px;
     z-index: -1;
     transition: height 0.4s ease, top 0.4s ease;
+}
+
+/* ===== PENDING DELETION ===== */
+
+.day.pending-delete {
+    animation: pendingPulse 0.8s ease-in-out infinite;
+    outline: 2px dashed #FF5555;
+    outline-offset: -2px;
+    border-radius: 6px;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.entry-item.pending-delete {
+    animation: pendingPulse 0.8s ease-in-out infinite;
+    border-color: #FF5555 !important;
+    background: rgba(255, 85, 85, 0.08);
+}
+
+.entry-item.pending-delete .entry-delete {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+@keyframes pendingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
 }

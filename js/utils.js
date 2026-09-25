@@ -65,3 +65,45 @@ function showToast(msg, type) {
     toast.className = `toast ${type} show`;
     setTimeout(() => toast.classList.remove('show'), 2500);
 }
+
+// Toast con pulsante Annulla. onUndo eseguito al click, onCommit se scade il tempo.
+let undoToastTimer = null;
+function showUndoToast(msg, onUndo, onCommit, duration = 5000) {
+    const toast = document.getElementById('toast');
+    clearTimeout(undoToastTimer);
+
+    let committed = false;
+    const commit = () => {
+        if (committed) return;
+        committed = true;
+        clearTimeout(undoToastTimer);
+        toast.classList.remove('show');
+        toast.onclick = null;
+        if (onCommit) onCommit();
+    };
+
+    toast.innerHTML = `<span>${msg}</span><button class="toast-undo">↩ Annulla (${Math.round(duration / 1000)}s)</button>`;
+    toast.className = 'toast info show';
+
+    const btn = toast.querySelector('.toast-undo');
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        if (committed) return;
+        committed = true;
+        clearTimeout(undoToastTimer);
+        clearInterval(countdown);
+        toast.classList.remove('show');
+        toast.onclick = null;
+        if (onUndo) onUndo();
+    };
+
+    // Countdown visivo
+    let remaining = Math.round(duration / 1000);
+    const countdown = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) { clearInterval(countdown); return; }
+        if (btn && !committed) btn.textContent = `↩ Annulla (${remaining}s)`;
+    }, 1000);
+
+    undoToastTimer = setTimeout(() => { clearInterval(countdown); commit(); }, duration);
+}

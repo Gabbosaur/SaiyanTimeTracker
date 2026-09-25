@@ -45,9 +45,11 @@ function updateTimeRangeLabel() {
     const parts = ranges.map(r => `${fmtHour(startH + r.start)}→${fmtHour(startH + r.start + r.dur)}`);
     if (label) label.textContent = `${parts.join(', ')} (${totalHours}h)`;
 
-    // Sincronizza il campo ore hidden
-    const hoursEl = document.getElementById('entryHours');
-    if (hoursEl) hoursEl.value = String(totalHours);
+    // Sincronizza il campo ore hidden SOLO per i permessi (le ferie restano 8h)
+    if (selectedType === 'permessi') {
+        const hoursEl = document.getElementById('entryHours');
+        if (hoursEl) hoursEl.value = String(totalHours);
+    }
     if (multiDates.length > 0) updateBudgetPreview();
 }
 
@@ -172,6 +174,8 @@ function openModal(dateStr) {
 }
 
 function editEntry(id) {
+    // Blocca la modifica se l'entry è in fase di eliminazione
+    if (pendingDeleteId === id) return;
     const entry = entries.find(e => e.id === id);
     if (!entry) return;
     editingId = id;
@@ -376,13 +380,83 @@ function saveEntry() {
 
 function deleteEntry() {
     if (!editingId) return;
-    entries = entries.filter(e => e.id !== editingId);
-    saveEntries(); closeModal(); render();
-    showToast('Eliminato', 'info');
+    const id = editingId;
+    closeModal();
+    performDeleteWithUndo(id);
 }
 
 function quickDelete(id) {
-    entries = entries.filter(e => e.id !== id);
-    saveEntries(); render();
-    showToast('Eliminato', 'info');
+    // Blocca se è già in eliminazione
+    if (pendingDeleteId === id) return;
+    performDeleteWithUndo(id);
+}
+
+// Elimina con possibilità di annullare per 5 secondi
+let pendingDeleteId = null;
+
+function performDeleteWithUndo(id) {
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+
+    // Marca gli elementi come "in eliminazione" senza ri-renderizzare tutto
+    pendingDeleteId = id;
+    setPendingDeleteClass(id, entry.date, true);
+
+    const label = entry.type === 'ferie' ? 'Ferie' : 'Permesso';
+    showUndoToast(
+        `${label} in eliminazione`,
+        () => {
+            // UNDO: togli solo la classe, nessun re-render
+            setPendingDeleteClass(id, entry.date, false);
+            pendingDeleteId = null;
+            showToast('Ripristinato', 'success');
+        },
+        () => {
+            // COMMIT: rimuovi l'entry con update mirato del DOM (niente full render)
+            if (pendingDeleteId) {
+                const removedId = pendingDeleteId;
+                const removed = entries.find(e => e.id === removedId);
+                entries = entries.filter(e => e.id !== removedId);
+                pendingDeleteId = null;
+                saveEntries();
+                removeEntryFromDOM(removedId, removed ? removed.date : null);
+                // Aggiorna solo statistiche e badge (operazioni leggere)
+                updateStats();
+                updateFloatingStats();
+            }
+        }
+    );
+}
+
+// Rimuove dal DOM la riga del registro e aggiorna la cella del calendario
+// senza ricostruire l'intero calendario
+function removeEntryFromDOM(id, dateStr) {
+    // Rimuovi la riga dal registro con una piccola animazione di uscita
+    document.querySelectorAll(`.entry-item[data-entry-id="${id}"]`).forEach(item => {
+        item.style.transition = 'opacity 0.2s, transform 0.2s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-10px)';
+        setTimeout(() => item.remove(), 200);
+    });
+    // Se il registro resta vuoto, mostra il placeholder
+    setTimeout(() => {
+        const list = document.getElementById('entriesList');
+        if (list && list.querySelectorAll('.entry-item').length === 0) {
+            list.innerHTML = '<div class="no-entries">Nessun inserimento per il ' + currentYear + '. Clicca su un giorno o usa il pulsante "Aggiungi".</div>';
+        }
+    }, 210);
+
+    // Aggiorna solo la cella del calendario interessata
+    if (dateStr) refreshCalendarDay(dateStr);
+}
+
+// Aggiunge/rimuove la classe pending-delete sugli elementi già nel DOM
+function setPendingDeleteClass(id, dateStr, on) {
+    const dayEl = document.querySelector(`.day[data-date="${dateStr}"]`);
+    if (dayEl) dayEl.classList.toggle('pending-delete', on);
+    document.querySelectorAll(`.entry-item[data-entry-id="${id}"]`).forEach(item => {
+        item.classList.toggle('pending-delete', on);
+        // Disabilita i bottoni di modifica/elimina della riga
+        item.querySelectorAll('.entry-delete').forEach(btn => { btn.disabled = on; });
+    });
 }

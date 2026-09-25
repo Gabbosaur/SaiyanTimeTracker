@@ -17,69 +17,9 @@ function renderCalendar() {
         html += `<div class="days">`;
         for (let i = 0; i < startDay; i++) html += `<div class="day empty"></div>`;
 
-        const today = new Date();
         for (let d = 1; d <= daysInMonth; d++) {
-            const date = new Date(currentYear, m, d);
-            const dow = date.getDay();
-            const isWeekend = dow === 0 || dow === 6;
-            const dateStr = formatDate(currentYear, m, d);
-            const isHoliday = holidays[dateStr];
-            const dayEntries = entries.filter(e => e.date === dateStr);
-            const hasFerie = dayEntries.some(e => e.type === 'ferie');
-            const hasPermessi = dayEntries.some(e => e.type === 'permessi');
-            const isToday = date.toDateString() === today.toDateString();
-
-            let cls = 'day';
-            let inlineStyle = '';
-            if (isWeekend) cls += ' weekend';
-            else if (isHoliday) cls += ' festivo';
-            if (isToday) cls += ' today';
-            if (!isHoliday && !isWeekend) {
-                if (hasFerie && hasPermessi) cls += ' both';
-                else if (hasFerie) cls += ' ferie';
-                else if (hasPermessi) {
-                    const permEntries = dayEntries.filter(e => e.type === 'permessi');
-                    const dayH = getWorkDayHours();
-                    const wsH = getWorkStartHour();
-                    // Raccogli tutte le barre da tutte le entry permesso del giorno
-                    const allBars = [];
-                    permEntries.forEach(pe => {
-                        if (pe.timeRanges && pe.timeRanges.length > 0) {
-                            pe.timeRanges.forEach(r => {
-                                const startIdx = r.start - wsH;
-                                allBars.push({ top: (startIdx / dayH) * 100, h: (r.dur / dayH) * 100 });
-                            });
-                        } else {
-                            const startIdx = (pe.startHour != null ? pe.startHour : wsH) - wsH;
-                            allBars.push({ top: (startIdx / dayH) * 100, h: (pe.hours / dayH) * 100 });
-                        }
-                    });
-                    if (allBars.length === 1) {
-                        cls += ' permessi permessi-fill';
-                        inlineStyle = `style="--fill:${allBars[0].h}%; --fill-top:${allBars[0].top}%"`;
-                    } else {
-                        cls += ' permessi permessi-multi';
-                        inlineStyle = `data-bars='${JSON.stringify(allBars)}'`;
-                    }
-                }
-            }
-
-            let tooltip = isHoliday ? `${dateStr} — ${isHoliday}` : dateStr;
-            if (!isHoliday && !isWeekend && dayEntries.length > 0) {
-                tooltip = dayEntries.map(e => {
-                    if (e.type === 'ferie') return `Ferie ${e.hours}h${e.note ? ' — ' + e.note : ''}`;
-                    let range = '';
-                    if (e.timeRanges && e.timeRanges.length > 0) {
-                        range = ' (' + e.timeRanges.map(r => `${fmtHour(r.start)}→${fmtHour(r.start + r.dur)}`).join(', ') + ')';
-                    } else if (e.startHour != null) {
-                        range = ` (${fmtHour(e.startHour)}→${fmtHour(e.startHour + e.hours)})`;
-                    }
-                    return `Permesso ${e.hours}h${range}${e.note ? ' — ' + e.note : ''}`;
-                }).join('\n');
-            }
-            const selectable = !isWeekend && !isHoliday;
-            const dataAttr = selectable ? `data-date="${dateStr}"` : '';
-            html += `<div class="${cls}" ${dataAttr} ${inlineStyle} title="${tooltip}">${d}</div>`;
+            const cell = computeDayCell(currentYear, m, d, holidays);
+            html += `<div class="${cell.cls}" ${cell.dataAttr} ${cell.inlineStyle} title="${cell.tooltip}">${d}</div>`;
         }
 
         html += `</div>`;
@@ -88,7 +28,79 @@ function renderCalendar() {
     }
 
     // Render barre multiple per permessi-multi
-    document.querySelectorAll('.day.permessi-multi[data-bars]').forEach(dayEl => {
+    renderMultiBars();
+}
+
+// Calcola classi, stile inline, tooltip e attributi per una singola cella-giorno
+function computeDayCell(year, m, d, holidays) {
+    const date = new Date(year, m, d);
+    const dow = date.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const dateStr = formatDate(year, m, d);
+    const isHoliday = holidays[dateStr];
+    const dayEntries = entries.filter(e => e.date === dateStr);
+    const hasFerie = dayEntries.some(e => e.type === 'ferie');
+    const hasPermessi = dayEntries.some(e => e.type === 'permessi');
+    const isToday = date.toDateString() === new Date().toDateString();
+
+    let cls = 'day';
+    let inlineStyle = '';
+    if (isWeekend) cls += ' weekend';
+    else if (isHoliday) cls += ' festivo';
+    if (isToday) cls += ' today';
+    if (!isHoliday && !isWeekend) {
+        if (hasFerie && hasPermessi) cls += ' both';
+        else if (hasFerie) cls += ' ferie';
+        else if (hasPermessi) {
+            const permEntries = dayEntries.filter(e => e.type === 'permessi');
+            const dayH = getWorkDayHours();
+            const wsH = getWorkStartHour();
+            const allBars = [];
+            permEntries.forEach(pe => {
+                if (pe.timeRanges && pe.timeRanges.length > 0) {
+                    pe.timeRanges.forEach(r => {
+                        const startIdx = r.start - wsH;
+                        allBars.push({ top: (startIdx / dayH) * 100, h: (r.dur / dayH) * 100 });
+                    });
+                } else {
+                    const startIdx = (pe.startHour != null ? pe.startHour : wsH) - wsH;
+                    allBars.push({ top: (startIdx / dayH) * 100, h: (pe.hours / dayH) * 100 });
+                }
+            });
+            if (allBars.length === 1) {
+                cls += ' permessi permessi-fill';
+                inlineStyle = `style="--fill:${allBars[0].h}%; --fill-top:${allBars[0].top}%"`;
+            } else {
+                cls += ' permessi permessi-multi';
+                inlineStyle = `data-bars='${JSON.stringify(allBars)}'`;
+            }
+        }
+    }
+
+    let tooltip = isHoliday ? `${dateStr} — ${isHoliday}` : dateStr;
+    if (!isHoliday && !isWeekend && dayEntries.length > 0) {
+        tooltip = dayEntries.map(e => {
+            if (e.type === 'ferie') return `Ferie ${e.hours}h${e.note ? ' — ' + e.note : ''}`;
+            let range = '';
+            if (e.timeRanges && e.timeRanges.length > 0) {
+                range = ' (' + e.timeRanges.map(r => `${fmtHour(r.start)}→${fmtHour(r.start + r.dur)}`).join(', ') + ')';
+            } else if (e.startHour != null) {
+                range = ` (${fmtHour(e.startHour)}→${fmtHour(e.startHour + e.hours)})`;
+            }
+            return `Permesso ${e.hours}h${range}${e.note ? ' — ' + e.note : ''}`;
+        }).join('\n');
+    }
+    const selectable = !isWeekend && !isHoliday;
+    const dataAttr = selectable ? `data-date="${dateStr}"` : '';
+    return { cls, inlineStyle, tooltip, dataAttr, dateStr };
+}
+
+// Genera i segmenti-barra per le celle permessi-multi
+function renderMultiBars(scope) {
+    const root = scope || document;
+    root.querySelectorAll('.day.permessi-multi[data-bars]').forEach(dayEl => {
+        // Pulisci eventuali segmenti precedenti
+        dayEl.querySelectorAll('.permessi-bar-segment').forEach(s => s.remove());
         try {
             const bars = JSON.parse(dayEl.dataset.bars);
             bars.forEach(bar => {
@@ -100,6 +112,22 @@ function renderCalendar() {
             });
         } catch {}
     });
+}
+
+// Aggiorna in-place solo la cella di un giorno specifico (no full render)
+function refreshCalendarDay(dateStr) {
+    const oldEl = document.querySelector(`.day[data-date="${dateStr}"]`);
+    if (!oldEl) return;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const holidays = getHolidays(currentYear);
+    const cell = computeDayCell(y, m - 1, d, holidays);
+
+    // Ricostruisci l'elemento
+    const temp = document.createElement('div');
+    temp.innerHTML = `<div class="${cell.cls}" ${cell.dataAttr} ${cell.inlineStyle} title="${cell.tooltip}">${d}</div>`;
+    const newEl = temp.firstElementChild;
+    oldEl.replaceWith(newEl);
+    renderMultiBars(newEl.parentElement);
 }
 
 function renderEntries() {
@@ -116,7 +144,7 @@ function renderEntries() {
         const statusCls = isPast ? 'entry-past' : isToday ? 'entry-today' : 'entry-future';
         const statusLabel = isPast ? '✓ Usato' : isToday ? '⏳ Oggi' : '📅 Pianificato';
         return `
-        <div class="entry-item ${statusCls}">
+        <div class="entry-item ${statusCls}" data-entry-id="${e.id}">
             <div class="entry-dot ${e.type}"></div>
             <div class="entry-date">${formatDateDisplay(e.date)}</div>
             <div class="entry-type ${e.type}">${e.type === 'ferie' ? '🔥 Ferie' : '⚡ Permessi'}</div>
@@ -193,6 +221,10 @@ function hideDragInfo() {
 
 function onDayClick(dateStr) {
     const dayEntries = entries.filter(e => e.date === dateStr);
+    // Blocca interazione se un'entry di questo giorno è in fase di eliminazione
+    if (typeof pendingDeleteId !== 'undefined' && pendingDeleteId != null && dayEntries.some(e => e.id === pendingDeleteId)) {
+        return;
+    }
     if (dayEntries.length === 0) {
         openModal(dateStr);
     } else {
