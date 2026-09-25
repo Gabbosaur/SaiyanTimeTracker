@@ -68,19 +68,32 @@ function showToast(msg, type) {
 
 // Toast con pulsante Annulla. onUndo eseguito al click, onCommit se scade il tempo.
 let undoToastTimer = null;
+let undoToastInterval = null;
+let undoToastFinalize = null; // forza il commit del toast precedente ancora attivo
+
 function showUndoToast(msg, onUndo, onCommit, duration = 5000) {
     const toast = document.getElementById('toast');
+
+    // Se c'è un toast di undo ancora attivo, finalizzalo (commit) prima di aprirne uno nuovo
+    if (undoToastFinalize) undoToastFinalize();
+
+    // Pulisci timer precedenti
     clearTimeout(undoToastTimer);
+    clearInterval(undoToastInterval);
 
     let committed = false;
     const commit = () => {
         if (committed) return;
         committed = true;
         clearTimeout(undoToastTimer);
+        clearInterval(undoToastInterval);
+        undoToastFinalize = null;
         toast.classList.remove('show');
         toast.onclick = null;
         if (onCommit) onCommit();
     };
+    // Esposto per essere forzato dalla prossima eliminazione
+    undoToastFinalize = commit;
 
     toast.innerHTML = `<span>${msg}</span><button class="toast-undo">↩ Annulla (${Math.round(duration / 1000)}s)</button>`;
     toast.className = 'toast info show';
@@ -91,7 +104,8 @@ function showUndoToast(msg, onUndo, onCommit, duration = 5000) {
         if (committed) return;
         committed = true;
         clearTimeout(undoToastTimer);
-        clearInterval(countdown);
+        clearInterval(undoToastInterval);
+        undoToastFinalize = null;
         toast.classList.remove('show');
         toast.onclick = null;
         if (onUndo) onUndo();
@@ -99,11 +113,11 @@ function showUndoToast(msg, onUndo, onCommit, duration = 5000) {
 
     // Countdown visivo
     let remaining = Math.round(duration / 1000);
-    const countdown = setInterval(() => {
+    undoToastInterval = setInterval(() => {
         remaining--;
-        if (remaining <= 0) { clearInterval(countdown); return; }
+        if (remaining <= 0) { clearInterval(undoToastInterval); return; }
         if (btn && !committed) btn.textContent = `↩ Annulla (${remaining}s)`;
     }, 1000);
 
-    undoToastTimer = setTimeout(() => { clearInterval(countdown); commit(); }, duration);
+    undoToastTimer = setTimeout(commit, duration);
 }

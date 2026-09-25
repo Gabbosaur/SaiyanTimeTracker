@@ -397,29 +397,29 @@ let pendingDeleteId = null;
 function performDeleteWithUndo(id) {
     const entry = entries.find(e => e.id === id);
     if (!entry) return;
+    const entryDate = entry.date;
 
     // Marca gli elementi come "in eliminazione" senza ri-renderizzare tutto
     pendingDeleteId = id;
-    setPendingDeleteClass(id, entry.date, true);
+    setPendingDeleteClass(id, entryDate, true);
 
     const label = entry.type === 'ferie' ? 'Ferie' : 'Permesso';
     showUndoToast(
         `${label} in eliminazione`,
         () => {
             // UNDO: togli solo la classe, nessun re-render
-            setPendingDeleteClass(id, entry.date, false);
-            pendingDeleteId = null;
+            setPendingDeleteClass(id, entryDate, false);
+            if (pendingDeleteId === id) pendingDeleteId = null;
             showToast('Ripristinato', 'success');
         },
         () => {
-            // COMMIT: rimuovi l'entry con update mirato del DOM (niente full render)
-            if (pendingDeleteId) {
-                const removedId = pendingDeleteId;
-                const removed = entries.find(e => e.id === removedId);
-                entries = entries.filter(e => e.id !== removedId);
-                pendingDeleteId = null;
+            // COMMIT: rimuovi questa entry specifica (id dalla closure, non la globale)
+            {
+                const removed = entries.find(e => e.id === id);
+                entries = entries.filter(e => e.id !== id);
+                if (pendingDeleteId === id) pendingDeleteId = null;
                 saveEntries();
-                removeEntryFromDOM(removedId, removed ? removed.date : null);
+                removeEntryFromDOM(id, removed ? removed.date : entryDate);
                 // Aggiorna solo statistiche e badge (operazioni leggere)
                 updateStats();
                 updateFloatingStats();
