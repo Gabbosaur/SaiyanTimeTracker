@@ -418,11 +418,12 @@ function performDeleteWithUndo(id) {
                 const removed = entries.find(e => e.id === id);
                 entries = entries.filter(e => e.id !== id);
                 if (pendingDeleteId === id) pendingDeleteId = null;
-                saveEntries();
+                // Aggiorna subito la UI (indipendente dal salvataggio su file)
                 removeEntryFromDOM(id, removed ? removed.date : entryDate);
-                // Aggiorna solo statistiche e badge (operazioni leggere)
                 updateStats();
                 updateFloatingStats();
+                // Poi persisti (può aprire il file picker, ma la UI è già stabile)
+                saveEntries();
             }
         }
     );

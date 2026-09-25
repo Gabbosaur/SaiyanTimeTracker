@@ -59,11 +59,17 @@ function download(filename, content, type) {
     URL.revokeObjectURL(url);
 }
 
+// Timer condiviso per tutti i toast (semplici e undo)
+let toastHideTimer = null;
+
 function showToast(msg, type) {
     const toast = document.getElementById('toast');
+    // Non sovrascrivere un toast di undo ancora attivo
+    if (undoToastFinalize) return;
+    clearTimeout(toastHideTimer);
     toast.textContent = msg;
     toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 2500);
+    toastHideTimer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
 // Toast con pulsante Annulla. onUndo eseguito al click, onCommit se scade il tempo.
@@ -77,9 +83,10 @@ function showUndoToast(msg, onUndo, onCommit, duration = 5000) {
     // Se c'è un toast di undo ancora attivo, finalizzalo (commit) prima di aprirne uno nuovo
     if (undoToastFinalize) undoToastFinalize();
 
-    // Pulisci timer precedenti
+    // Pulisci timer precedenti (incluso quello del toast semplice)
     clearTimeout(undoToastTimer);
     clearInterval(undoToastInterval);
+    clearTimeout(toastHideTimer);
 
     let committed = false;
     const commit = () => {
